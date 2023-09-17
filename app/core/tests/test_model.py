@@ -7,6 +7,17 @@ from django.contrib.auth import get_user_model
 from core import models
 
 
+def create_user(
+        username='user',
+        email='user@example.com',
+        password='12345678'):
+    return get_user_model().objects.create_user(
+        username=username,
+        email=email,
+        password=password
+    )
+
+
 class ModelTests(TestCase):
     """
     Tests for models
@@ -80,3 +91,9 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(recipe), recipe.title)
+
+    def test_create_tag(self):
+        user = create_user()
+        tag = models.Tag.objects.create(user=user, name='Tag1')
+
+        self.assertEqual(str(tag), tag.name)
