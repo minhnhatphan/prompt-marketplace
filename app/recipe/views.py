@@ -1,7 +1,7 @@
 """
 View for the Recipe APIs
 """
-from drf_spectacular.utils import(
+from drf_spectacular.utils import (
     extend_schema_view,
     extend_schema,
     OpenApiParameter,
@@ -69,6 +69,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'assigned_only',
+                OpenApiTypes.INT, enum=[0, 1],
+                description='Filter by items assigned to recipes.',
+            )
+        ]
+    )
+)
 class BaseRecipeViewSet(mixins.UpdateModelMixin,
                         mixins.DestroyModelMixin,
                         mixins.ListModelMixin,
@@ -78,7 +89,16 @@ class BaseRecipeViewSet(mixins.UpdateModelMixin,
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
-        return self.queryset.filter(user=self.request.user).order_by('-name')
+        assigned_only = bool(
+            int(self.request.query_params.get('assigned_only', 0))
+        )
+        queryset = self.queryset
+        if assigned_only:
+            queryset = queryset.filter(recipe__isnull=False)
+
+        return queryset.filter(
+            user=self.request.user
+        ).order_by('-name').distinct()
 
 
 class TagViewSet(BaseRecipeViewSet):
